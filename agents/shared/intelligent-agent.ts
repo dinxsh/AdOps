@@ -79,8 +79,8 @@ export class IntelligentBiddingAgent {
   protected maxBid: number;
   protected serverUrl: string;
   protected isActive: boolean = true;
-  private monitoringInterval: any | null = null;
-  private auctionEndMonitoringInterval: any | null = null;
+  private monitoringInterval: NodeJS.Timeout | null = null;
+  private auctionEndMonitoringInterval: NodeJS.Timeout | null = null;
   protected model;
   protected bidHistory: BidContext["bidHistory"] = [];
   protected lastRefundAmount?: number;
@@ -870,7 +870,7 @@ Hard constraints:
     // Ensure the event bid provided matches or is lower than what we expect.
     // In a real system we might cross-reference with active bids in a DB.
     // Here we trust the input but validate it against our max caps.
-    let fairAmount = event.bidAmount;
+    const fairAmount = event.bidAmount;
 
     // 2. Safety Constraint Check
     if (fairAmount > this.maxBid) {
