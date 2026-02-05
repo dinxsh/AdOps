@@ -34,6 +34,15 @@ interface BidContext {
   lastRefundAmount?: number;
 }
 
+export interface CampaignDetails {
+  campaignName: string;
+  productDescription: string;
+  objective: string;
+  audienceDescription: string;
+  budgetTotal: number;
+  budgetDaily: number;
+}
+
 export class IntelligentBiddingAgent {
   protected wallet: Keypair; // Solana Devnet for bidding
   protected mainnetWallet: Keypair; // Solana Mainnet for Freepik
@@ -727,6 +736,51 @@ export class IntelligentBiddingAgent {
     } catch {
       // Token account doesn't exist, balance is 0
       return 0;
+    }
+  }
+
+  async planCampaign(details: CampaignDetails): Promise<void> {
+    console.log(`\n📋 [${this.agentName}] Planning campaign for: ${details.campaignName}`);
+
+    const prompt = `
+You are an expert AdOps Campaign Manager.
+A new campaign has been created with the following details:
+
+Name: ${details.campaignName}
+Product description: ${details.productDescription}
+Objective: ${details.objective}
+Target audience: ${details.audienceDescription}
+Total budget: $${details.budgetTotal}
+Daily budget: $${details.budgetDaily}
+
+Step 1: Produce a media plan JSON with:
+channels[]: name, budget_share (0–1), bid_strategy (cpc or cpm), max_bid.
+creative_variants[]: headline, body, cta, target_url.
+
+Step 2: For each channel, use the 'create_mock_campaign' tool to initialize it.
+Step 3: Use the 'log_action' tool to explain your media mix choices.
+
+Constraint: Total budget_share must sum to 1.0 across all channels.
+`;
+
+    try {
+      // Reuse the existing tool creation method but we only need a subset ideally,
+      // but for simplicity we can expose the relevant ones.
+      // We need create_mock_campaign and log_action.
+      const tools = this.createBiddingTools();
+
+      console.log(`\n🧠 [${this.agentName}] Generating media plan...`);
+      const response = await generateText({
+        model: this.model,
+        tools: tools,
+        prompt: prompt,
+        maxSteps: 10, // Allow multi-step for creating multiple campaigns
+      });
+
+      console.log(`\n✅ [${this.agentName}] Campaign planning complete.`);
+      console.log(response.text);
+    } catch (error) {
+      console.error(`❌ [${this.agentName}] Campaign planning failed:`, error);
     }
   }
 
