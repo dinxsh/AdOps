@@ -1,4 +1,5 @@
 import axios from "axios";
+import { Buffer } from "buffer";
 import { withPaymentInterceptor } from "x402-axios";
 import { createSigner, type Signer } from "x402/types";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
@@ -50,6 +51,15 @@ export interface OptimizationContext {
   statsJson: string; // JSON string of per-channel stats
   creativesJson: string; // JSON string of active creatives
   recentActionsJson: string; // JSON string of previous actions
+}
+
+export interface AdEvent {
+  eventId: string;
+  type: "impression" | "click";
+  campaignId: string;
+  creativeId: string;
+  timestamp: string;
+  bidAmount: number;
 }
 
 export class IntelligentBiddingAgent {
@@ -849,6 +859,82 @@ Hard constraints:
     } catch (error) {
       console.error(`❌ [${this.agentName}] Optimization failed:`, error);
     }
+  }
+
+  async processEventPayment(event: AdEvent): Promise<{ success: boolean; message: string; txHash?: string }> {
+    console.log(`\n💸 [${this.agentName}] Processing payment for event: ${event.type} (${event.eventId})`);
+
+    const SAFETY_THRESHOLD = 10.0; // Hard safety cap for a single event
+
+    // 1. Calculate Fair Amount (simplistic validation)
+    // Ensure the event bid provided matches or is lower than what we expect.
+    // In a real system we might cross-reference with active bids in a DB.
+    // Here we trust the input but validate it against our max caps.
+    let fairAmount = event.bidAmount;
+
+    // 2. Safety Constraint Check
+    if (fairAmount > this.maxBid) {
+      const msg = `PAYMENT BLOCKED: Amount $${fairAmount} exceeds agent max bid $${this.maxBid}`;
+      console.error(`❌ [${this.agentName}] ${msg}`);
+      await this.logAction("payment_blocked", msg, "Safety violation");
+      return { success: false, message: msg };
+    }
+
+    if (fairAmount > SAFETY_THRESHOLD) {
+      const msg = `PAYMENT BLOCKED: Amount $${fairAmount} exceeds safety threshold $${SAFETY_THRESHOLD}`;
+      console.error(`❌ [${this.agentName}] ${msg}`);
+      await this.logAction("payment_blocked", msg, "Safety violation");
+      return { success: false, message: msg };
+    }
+
+    // 3. Budget Check
+    // We would need to fetch the current remaining budget relative to the campaign ideally.
+    // For this method, we'll fetch the wallet balance as a proxy for 'remaining funds' 
+    // or rely on a passed-in check. Let's start with wallet balance check.
+    const currentBalance = await this.getUSDCBalance();
+
+    // In a real campaign contexts, we also check specific campaign budget allocation.
+    // Assuming 'fairAmount' is the cost.
+
+    if (currentBalance < fairAmount) {
+      const msg = `PAYMENT FAILED: Insufficient funds. Balance: $${currentBalance}, Needed: $${fairAmount}`;
+      console.error(`❌ [${this.agentName}] ${msg}`);
+      await this.logAction("payment_failed", msg, "Insufficient funds");
+      return { success: false, message: msg };
+    }
+
+    // 4. Execute Payment (Simulation)
+    // In strict mode, we would call the x402 payment tool or logic here.
+    // re-using payPerEvent logic but programmatically.
+    try {
+      console.log(`   ✅ Validated. Executing payment of $${fairAmount}...`);
+
+      // Simulating the transaction execution
+      const mockTxHash = `0x${Math.random().toString(16).substring(2)}`;
+
+      // Log the successful payment linked to metadata
+      await this.logAction(
+        "payment_sent",
+        `Paid $${fairAmount} for ${event.type}`,
+        `Campaign: ${event.campaignId}, Creative: ${event.creativeId}, Event: ${event.eventId}`
+      );
+
+      console.log(`   🎉 Payment successful! Tx: ${mockTxHash}`);
+      return { success: true, message: "Payment settled", txHash: mockTxHash };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`❌ [${this.agentName}] Payment execution error:`, errorMessage);
+      return { success: false, message: errorMessage };
+    }
+  }
+
+  // Helper just for internal logging
+  private async logAction(actionType: string, details: string, reasoning: string) {
+    // Direct console log for now as 'tool' logic might be complex to call internally without 'callTool' wrapper from AI SDK
+    // But we can replicate the side effect:
+    console.log(`\n📝 [${this.agentName}] LOG: [${actionType}] ${details}`);
+    console.log(`   Reasoning: ${reasoning}`);
   }
 
   async decideBidStrategy(adSpotId: string): Promise<void> {
