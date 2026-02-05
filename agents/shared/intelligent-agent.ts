@@ -51,8 +51,8 @@ export class IntelligentBiddingAgent {
   protected maxBid: number;
   protected serverUrl: string;
   protected isActive: boolean = true;
-  private monitoringInterval: NodeJS.Timeout | null = null;
-  private auctionEndMonitoringInterval: NodeJS.Timeout | null = null;
+  private monitoringInterval: any | null = null;
+  private auctionEndMonitoringInterval: any | null = null;
   protected model;
   protected bidHistory: BidContext["bidHistory"] = [];
   protected lastRefundAmount?: number;
@@ -140,7 +140,7 @@ export class IntelligentBiddingAgent {
     const googleProvider = createGoogleGenerativeAI({
       apiKey: config.geminiApiKey,
     });
-    this.model = googleProvider("gemini-1.5-pro");
+    this.model = googleProvider("gemini-1.5-flash");
 
     console.log(`🧠 ${this.agentName} initialized with AI reasoning (Gemini)`);
     console.log(
@@ -162,7 +162,7 @@ export class IntelligentBiddingAgent {
             'Detailed creative prompt for the image generation AI. Be specific about visual elements, style, composition, lighting, and mood. Example: "A sleek modern smartphone on a minimalist white desk with soft natural lighting, professional product photography, high detail, clean composition"'
           ),
       }),
-      execute: async ({ prompt }) => {
+      execute: async ({ prompt }: { prompt: string }) => {
         try {
           console.log(
             `\n🎨 [${this.agentName}] Generating ad image with prompt: "${prompt}"`
@@ -295,9 +295,8 @@ export class IntelligentBiddingAgent {
                     {
                       agentId: this.agentName,
                       status: "progress",
-                      message: `Still generating... ${
-                        i * 3
-                      }s elapsed (status: ${status})`,
+                      message: `Still generating... ${i * 3
+                        }s elapsed (status: ${status})`,
                     }
                   );
                 } catch {
@@ -396,7 +395,7 @@ export class IntelligentBiddingAgent {
           .optional()
           .describe("The adSpotId being auctioned (optional)"),
       }),
-      execute: async ({ adSpotId }) => {
+      execute: async ({ adSpotId }: { adSpotId?: string }) => {
         // Use the provided adSpotId or fall back to current ad spot
         const spotId = adSpotId || this.currentAdSpotId;
         console.log(
@@ -419,10 +418,10 @@ export class IntelligentBiddingAgent {
               winningBidder: data.currentWinner?.agentId || null,
               timeRemaining: data.timeRemaining
                 ? `${Math.floor(data.timeRemaining / 60)}:${(
-                    data.timeRemaining % 60
-                  )
-                    .toString()
-                    .padStart(2, "0")}`
+                  data.timeRemaining % 60
+                )
+                  .toString()
+                  .padStart(2, "0")}`
                 : null,
               bidHistory: data.bidHistory || [],
             },
@@ -459,7 +458,7 @@ export class IntelligentBiddingAgent {
           .string()
           .describe("Your strategic reasoning for this bid amount"),
       }),
-      execute: async ({ adSpotId, proposedAmount, reasoning }) => {
+      execute: async ({ adSpotId, proposedAmount, reasoning }: { adSpotId?: string; proposedAmount: number; reasoning: string }) => {
         try {
           // Use the provided adSpotId or fall back to current ad spot
           const spotId = adSpotId || this.currentAdSpotId;
@@ -482,9 +481,8 @@ export class IntelligentBiddingAgent {
                 2
               )} exceeds your maximum budget of $${maxAllowedBid.toFixed(
                 2
-              )} (total budget: $${
-                this.maxBid
-              }, minus $0.08 for image generation). You must EITHER bid less OR use the withdraw tool to exit the auction.`,
+              )} (total budget: $${this.maxBid
+                }, minus $0.08 for image generation). You must EITHER bid less OR use the withdraw tool to exit the auction.`,
             });
           }
 
@@ -604,11 +602,114 @@ export class IntelligentBiddingAgent {
       },
     });
 
+    const createMockCampaignTool = tool({
+      description: "Create a new ad campaign on the internal ad network.",
+      parameters: z.object({
+        name: z.string().describe("Campaign name"),
+        budget: z.number().describe("Total budget for this campaign"),
+        goals: z.array(z.string()).describe("List of campaign goals (e.g., 'brand_awareness', 'conversions')"),
+        bidStrategy: z.string().describe("Bidding strategy (e.g., 'cpc', 'cpm')"),
+      }),
+      execute: async ({ name, budget, goals, bidStrategy }: { name: string; budget: number; goals: string[]; bidStrategy: string }) => {
+        const campaignId = `camp_${Math.random().toString(36).substring(7)}`;
+        console.log(`\n📢 [${this.agentName}] Creating Mock Campaign: ${name} (${campaignId})`);
+        console.log(`   Budget: $${budget}, Strategy: ${bidStrategy}`);
+        return JSON.stringify({ success: true, campaignId, status: "active", details: { name, budget, goals } });
+      },
+    });
+
+    const updateMockCampaignTool = tool({
+      description: "Update an existing campaign's parameters (bids, budget, creative).",
+      parameters: z.object({
+        campaignId: z.string().describe("The ID of the campaign to update"),
+        updates: z.object({
+          bidAmount: z.number().optional(),
+          budget: z.number().optional(),
+          creativeId: z.string().optional(),
+          status: z.enum(["active", "paused", "stopped"]).optional(),
+        }).describe("Parameters to update"),
+        reasoning: z.string().describe("Why are you making these updates?"),
+      }),
+      execute: async ({ campaignId, updates, reasoning }: { campaignId: string; updates: { bidAmount?: number; budget?: number; creativeId?: string; status?: "active" | "paused" | "stopped" }; reasoning: string }) => {
+        console.log(`\n🔄 [${this.agentName}] Updating Campaign ${campaignId}`);
+        console.log(`   Reasoning: ${reasoning}`);
+        console.log(`   Updates: ${JSON.stringify(updates)}`);
+        return JSON.stringify({ success: true, campaignId, updatedFields: Object.keys(updates) });
+      },
+    });
+
+    const fetchStatsTool = tool({
+      description: "Fetch performance statistics for a campaign.",
+      parameters: z.object({
+        campaignId: z.string().describe("The campaign ID"),
+      }),
+      execute: async ({ campaignId }: { campaignId: string }) => {
+        // Mock data usually returns valid stats
+        const stats = {
+          impressions: Math.floor(Math.random() * 10000),
+          clicks: Math.floor(Math.random() * 500),
+          ctr: (Math.random() * 0.05).toFixed(4),
+          spend: (Math.random() * 50).toFixed(2),
+          conversions: Math.floor(Math.random() * 20),
+        };
+        console.log(`\n📊 [${this.agentName}] Stats for ${campaignId}: ${JSON.stringify(stats)}`);
+        return JSON.stringify({ success: true, campaignId, stats });
+      },
+    });
+
+    const openX402SessionTool = tool({
+      description: "Open a secure x402 payment session for a service.",
+      parameters: z.object({
+        serviceId: z.string().describe("The service identifier (e.g., 'freepik-gen', 'firecrawl-scrape')"),
+        budgetCap: z.number().describe("Max spend allowed in this session"),
+      }),
+      execute: async ({ serviceId, budgetCap }: { serviceId: string; budgetCap: number }) => {
+        const sessionId = `x402_sess_${Math.random().toString(36).substring(7)}`;
+        console.log(`\n💳 [${this.agentName}] Opening x402 Session for ${serviceId}`);
+        console.log(`   Cap: $${budgetCap}, Session: ${sessionId}`);
+        return JSON.stringify({ success: true, sessionId, status: "open", remainingBudget: budgetCap });
+      },
+    });
+
+    const payPerEventTool = tool({
+      description: "Execute a micropayment for a specific event/action within a session.",
+      parameters: z.object({
+        sessionId: z.string().describe("Active x402 session ID"),
+        amount: z.number().describe("Amount to pay"),
+        eventType: z.string().describe("Type of event being paid for (e.g., 'impression', 'api_call')"),
+      }),
+      execute: async ({ sessionId, amount, eventType }: { sessionId: string; amount: number; eventType: string }) => {
+        console.log(`\n💸 [${this.agentName}] x402 Payment: $${amount} for ${eventType}`);
+        console.log(`   Session: ${sessionId}`);
+        return JSON.stringify({ success: true, txHash: `0x${Math.random().toString(16).substring(2)}`, status: "settled" });
+      },
+    });
+
+    const logActionTool = tool({
+      description: "Log an action or decision for explainability/debugging.",
+      parameters: z.object({
+        actionType: z.string(),
+        details: z.string(),
+        reasoning: z.string(),
+      }),
+      execute: async ({ actionType, details, reasoning }: { actionType: string; details: string; reasoning: string }) => {
+        console.log(`\n📝 [${this.agentName}] LOG: [${actionType}] ${details}`);
+        console.log(`   Reasoning: ${reasoning}`);
+        return JSON.stringify({ success: true, logged: true });
+      },
+    });
+
     // Convert array to object (ToolSet) for Vercel AI SDK
     return {
       get_my_balance: getBalanceTool,
       get_auction_state: getAuctionStateTool,
       place_bid: placeBidTool,
+      create_mock_campaign: createMockCampaignTool,
+      update_mock_campaign: updateMockCampaignTool,
+      fetch_stats: fetchStatsTool,
+      open_x402_session: openX402SessionTool,
+      pay_per_event: payPerEventTool,
+      log_action: logActionTool,
     };
   }
 
@@ -643,8 +744,8 @@ export class IntelligentBiddingAgent {
 
       const refundContext = this.lastRefundAmount
         ? `\n\n🚨 URGENT: You were just outbid! You received a refund of $${this.lastRefundAmount.toFixed(
-            2
-          )} USDC. This means another agent bid higher than you. You MUST respond quickly or risk losing this valuable ad spot! Analyze why you lost and adjust your strategy immediately.`
+          2
+        )} USDC. This means another agent bid higher than you. You MUST respond quickly or risk losing this valuable ad spot! Analyze why you lost and adjust your strategy immediately.`
         : "";
 
       const brandContext = this.brandIdentity
@@ -670,6 +771,12 @@ Available Tools (for bidding only):
 2. get_auction_state - See current bid and auction status (includes timeRemaining)
 3. place_bid - Place a bid for the ad spot (costs USDC on Solana Devnet)
 4. withdraw - Withdraw from auction if not worth continuing
+5. create_mock_campaign - Initialize internal tracking
+6. update_mock_campaign - Adjust parameters
+7. fetch_stats - Check performance
+8. open_x402_session - Manage payment sessions
+9. pay_per_event - Execute payments
+10. log_action - Record your reasoning (USE THIS FREQUENTLY)
 
 Note: generate_ad_image tool is NOT available during bidding - you will receive a separate prompt for image generation AFTER winning.
 
@@ -703,8 +810,8 @@ Bidding Instructions:
 ⚠️  ERROR HANDLING - You MUST respond to these situations:
 - **proposalRejected**: The server rejected your bid as too low. Check minimumRequired and either bid that amount (if within budget) OR call withdraw tool.
 - **overBudget**: You tried to bid more than your max budget ($${(
-        this.maxBid - 0.08
-      ).toFixed(2)}). You MUST call the withdraw tool - do NOT try to bid again.
+          this.maxBid - 0.08
+        ).toFixed(2)}). You MUST call the withdraw tool - do NOT try to bid again.
 - **Payment failed**: If the blockchain payment fails, the tool will return an error. Try again with same or adjusted amount.
 
 Bidding Strategy Options:
@@ -726,23 +833,26 @@ ${refundContext}
 
 After the Auction ENDS (you will get a new prompt):
 - You will be notified with a "CONGRATULATIONS!" message
-- ONLY THEN should you call generate_ad_image to create your ${
-        this.brandIdentity ? "brand advertisement" : "advertisement"
-      }
-${
-  this.brandIdentity
-    ? `- Follow your brand guidelines: ${this.brandIdentity.visualStyle}
+- ONLY THEN should you call generate_ad_image to create your ${this.brandIdentity ? "brand advertisement" : "advertisement"
+        }
+${this.brandIdentity
+          ? `- Follow your brand guidelines: ${this.brandIdentity.visualStyle}
 - Emphasize: ${this.brandIdentity.marketingAngle}
 - Appeal to: ${this.brandIdentity.targetAudience}
 - Showcase your product: ${this.brandIdentity.productName}`
-    : "- Be creative with your image prompt - this is your chance to shine!"
-}
+          : "- Be creative with your image prompt - this is your chance to shine!"
+        }
 - Your ad will be displayed on the website for all visitors to see
-- This is a key marketing opportunity to ${
-        this.brandIdentity
+- This is a key marketing opportunity to ${this.brandIdentity
           ? `promote ${this.brandIdentity.productName} and build brand awareness`
           : "attract attention"
-      }
+        }
+
+TOOL USAGE RULES:
+- Prefer tool calls over free-form text for ANY state change or payment.
+- Use 'log_action' to explain your strategy instead of just outputting text.
+- If you are deciding to bid, use 'place_bid'.
+- If you are modifying your internal tracking, use 'update_mock_campaign'.
 
 Think step by step and make your move!`;
 
@@ -1023,18 +1133,15 @@ Think step by step and make your move!`;
 
             // Ask LLM to generate creative prompt and call generate_ad_image tool
             const brandGuidedPrompt = this.brandIdentity
-              ? `🎉 CONGRATULATIONS! You just won the ad spot auction "${adSpotId}" for ${
-                  this.brandIdentity.brandName
-                }!
+              ? `🎉 CONGRATULATIONS! You just won the ad spot auction "${adSpotId}" for ${this.brandIdentity.brandName
+              }!
 
-Now it's time to create a compelling advertisement for ${
-                  this.brandIdentity.productName
-                } that will be displayed on the website.
+Now it's time to create a compelling advertisement for ${this.brandIdentity.productName
+              } that will be displayed on the website.
 
 Your Brand Guidelines:
-- Product: ${this.brandIdentity.productName} - ${
-                  this.brandIdentity.productDescription
-                }
+- Product: ${this.brandIdentity.productName} - ${this.brandIdentity.productDescription
+              }
 - Target Audience: ${this.brandIdentity.targetAudience}
 - Brand Personality: ${this.brandIdentity.brandPersonality}
 - Marketing Angle: ${this.brandIdentity.marketingAngle}
@@ -1046,17 +1153,14 @@ Your task:
 2. Craft a detailed image generation prompt that includes:
    - Your product (${this.brandIdentity.productName})
    - Visual style matching your brand (${this.brandIdentity.visualStyle})
-   - Elements that convey your marketing angle (${
-     this.brandIdentity.marketingAngle
-   })
+   - Elements that convey your marketing angle (${this.brandIdentity.marketingAngle
+              })
    - Atmosphere that resonates with ${this.brandIdentity.targetAudience}
 3. Call the generate_ad_image tool with your brand-aligned creative prompt
 
-Make it authentic to ${
-                  this.brandIdentity.brandName
-                }! This ad should clearly communicate what ${
-                  this.brandIdentity.productName
-                } is and why your target audience should care.`
+Make it authentic to ${this.brandIdentity.brandName
+              }! This ad should clearly communicate what ${this.brandIdentity.productName
+              } is and why your target audience should care.`
               : `🎉 CONGRATULATIONS! You just won the ad spot auction "${adSpotId}"!
 
 Now it's time to create an amazing advertisement image that will be displayed on the website for all visitors to see.
