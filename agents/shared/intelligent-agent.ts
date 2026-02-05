@@ -43,6 +43,15 @@ export interface CampaignDetails {
   budgetDaily: number;
 }
 
+export interface OptimizationContext {
+  campaignId: string;
+  now: string;
+  remainingBudget: number;
+  statsJson: string; // JSON string of per-channel stats
+  creativesJson: string; // JSON string of active creatives
+  recentActionsJson: string; // JSON string of previous actions
+}
+
 export class IntelligentBiddingAgent {
   protected wallet: Keypair; // Solana Devnet for bidding
   protected mainnetWallet: Keypair; // Solana Mainnet for Freepik
@@ -781,6 +790,64 @@ Constraint: Total budget_share must sum to 1.0 across all channels.
       console.log(response.text);
     } catch (error) {
       console.error(`❌ [${this.agentName}] Campaign planning failed:`, error);
+    }
+  }
+
+  async optimizeCampaign(context: OptimizationContext): Promise<void> {
+    console.log(`\n🧠 [${this.agentName}] Optimizing campaign ${context.campaignId}...`);
+
+    // Construct the optimization prompt
+    const prompt = `
+You are in optimization mode for campaign ${context.campaignId}.
+Here are the latest stats and state:
+
+Current time: ${context.now}
+Remaining total budget: $${context.remainingBudget}
+
+Per-channel stats (JSON):
+${context.statsJson}
+
+Active creatives (JSON):
+${context.creativesJson}
+
+Previous actions taken (JSON):
+${context.recentActionsJson}
+
+Your task:
+Analyze performance (CTR, CPC, conversions).
+Decide what to do this cycle: pause weak creatives, raise/lower bids, shift budget between channels, or generate at most 2 new creative variants.
+
+Execute via tools: update_mock_campaign, create_mock_campaign.
+Log your reasoning with log_action.
+
+Hard constraints:
+- Never push total expected spend above remaining_budget ($${context.remainingBudget}).
+- Never increase any bid above reasonable market rates.
+- If data is too noisy or insufficient, make no-op adjustments and log that decision.
+`;
+
+    try {
+      const tools = this.createBiddingTools();
+
+      // Add generate_ad_image tool for optimization phase if needed
+      // Note: In strict mode we probably wouldn't want to call mainnet image gen during optimization 
+      // without user approval, but for this mock workflow it maps to the user's request "generate at most 2 new creative variants"
+      // We'll stick to 'tools' which has mock campaign tools. 
+      // The user request mentions "any creative tools" - we'll assume updated mock campaign handles creative ID swaps
+      // or we could add a specific mock creative tool if needed. For now standard tools are sufficient.
+
+      const response = await generateText({
+        model: this.model,
+        tools: tools,
+        prompt: prompt,
+        maxSteps: 10
+      });
+
+      console.log(`\n✅ [${this.agentName}] Optimization cycle complete.`);
+      console.log(response.text);
+
+    } catch (error) {
+      console.error(`❌ [${this.agentName}] Optimization failed:`, error);
     }
   }
 
