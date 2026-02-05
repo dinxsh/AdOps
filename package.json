@@ -20,13 +20,14 @@
     "test:firecrawl": "tsx test-firecrawl-scrape.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^1.0.0",
+    "@ai-sdk/google": "^1.2.22",
     "@hono/node-server": "^1.19.5",
-    "@solana/spl-token": "^0.4.9",
-    "@solana/web3.js": "^1.95.4",
-    "ai": "^4.0.0",
-    "axios": "^1.12.2",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
+    "ai": "^4.3.19",
+    "axios": "^1.13.4",
     "bs58": "^6.0.0",
+    "buffer": "^6.0.3",
     "dotenv": "^17.2.3",
     "hono": "^4.10.1",
     "mongodb": "^6.20.0",
@@ -36,13 +37,13 @@
     "x402": "^0.6.6",
     "x402-axios": "^0.6.6",
     "x402-hono": "^0.6.5",
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/bs58": "^4.0.4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.32",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
