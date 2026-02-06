@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const paymentRequirements = {
       scheme: "exact" as const,
       network:
-        network === "mainnet-beta" ? "solana" : ("solana-devnet" as const),
+        network === "mainnet-beta" ? "solana" : ("solana-devnet" as any),
       maxAmountRequired: (0.01 * 1_000_000).toString(),
       asset: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC SPL Token
       payTo: process.env.ADDRESS as string,
