@@ -6,8 +6,8 @@ import TerminalPanel from '@/app/components/TerminalPanel';
 interface StreamingMessage {
   id: string;
   type: 'agent_started' | 'scraping_started' | 'scraping_completed' | 'analytics_payment' | 'analytics_received' |
-        'analysis_started' | 'analysis_completed' | 'agent_status' | 'thinking' | 'bid' | 'reflection' |
-        'refund' | 'withdrawal' | 'agent_skipped' | 'agent_error' | 'auction_ended' | 'ad_image_ready' | 'image_generation_update';
+  'analysis_started' | 'analysis_completed' | 'agent_status' | 'thinking' | 'bid' | 'reflection' |
+  'refund' | 'withdrawal' | 'agent_skipped' | 'agent_error' | 'auction_ended' | 'ad_image_ready' | 'image_generation_update';
   agentId?: string;
   timestamp: string;
   // Agent started fields
@@ -55,7 +55,7 @@ interface StreamingMessage {
   budgetPerSpot?: { [key: string]: number };
   strategy?: string;
   // Agent status fields
-  status?: string;
+  // status property is distinct below
   // Bidding fields
   thinking?: string;
   proposedAmount?: number;
@@ -82,9 +82,9 @@ interface StreamingMessage {
 export default function AnalyticalAgentsPage() {
   const [messages, setMessages] = useState<StreamingMessage[]>([]);
   const [seenEventIds] = useState(new Set<string>()); // Deduplication
-  const [connectionStatus, setConnectionStatus] = useState<{[key: string]: 'connecting' | 'connected' | 'disconnected'}>({});
-  const [eventGaps, setEventGaps] = useState<{agentId: string, missing: number[]}[]>([]);
-  const [replayStatus, setReplayStatus] = useState<{[key: string]: {loading: boolean, count: number}}>({});
+  const [connectionStatus, setConnectionStatus] = useState<{ [key: string]: 'connecting' | 'connected' | 'disconnected' }>({});
+  const [eventGaps, setEventGaps] = useState<{ agentId: string, missing: number[] }[]>([]);
+  const [replayStatus, setReplayStatus] = useState<{ [key: string]: { loading: boolean, count: number } }>({});
   const [liveEventCount, setLiveEventCount] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
 
@@ -118,228 +118,228 @@ export default function AnalyticalAgentsPage() {
     // Create a unique ID for React
     const msgId = `${data.agentId || 'system'}-${data.type}-${data.timestamp}-${Math.random()}`;
 
-        switch (data.type) {
-          case 'agent_started':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'agent_started',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              availableSpots: data.availableSpots,
-              brandName: data.brandName,
-              productName: data.productName,
-            }]);
-            break;
+    switch (data.type) {
+      case 'agent_started':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'agent_started',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          availableSpots: data.availableSpots,
+          brandName: data.brandName,
+          productName: data.productName,
+        }]);
+        break;
 
-          case 'scraping_started':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'scraping_started',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              url: data.url,
-              paymentMethod: data.paymentMethod,
-              expectedCost: data.expectedCost,
-            }]);
-            break;
+      case 'scraping_started':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'scraping_started',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          url: data.url,
+          paymentMethod: data.paymentMethod,
+          expectedCost: data.expectedCost,
+        }]);
+        break;
 
-          case 'scraping_completed':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'scraping_completed',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              url: data.url,
-              contentLength: data.contentLength,
-              contentPreview: data.contentPreview,
-              siteTitle: data.siteTitle,
-              topics: data.topics,
-            }]);
-            break;
+      case 'scraping_completed':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'scraping_completed',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          url: data.url,
+          contentLength: data.contentLength,
+          contentPreview: data.contentPreview,
+          siteTitle: data.siteTitle,
+          topics: data.topics,
+        }]);
+        break;
 
-          case 'analytics_payment':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'analytics_payment',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              amount: data.amount,
-              paymentMethod: data.paymentMethod,
-            }]);
-            break;
+      case 'analytics_payment':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'analytics_payment',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          amount: data.amount,
+          paymentMethod: data.paymentMethod,
+        }]);
+        break;
 
-          case 'analytics_received':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'analytics_received',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              site: data.site,
-              audience: data.audience,
-              adSpots: data.adSpots,
-            }]);
-            break;
+      case 'analytics_received':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'analytics_received',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          site: data.site,
+          audience: data.audience,
+          adSpots: data.adSpots,
+        }]);
+        break;
 
-          case 'analysis_started':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'analysis_started',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              analysisContext: data.analysisContext,
-            }]);
-            break;
+      case 'analysis_started':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'analysis_started',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          analysisContext: data.analysisContext,
+        }]);
+        break;
 
-          case 'analysis_completed':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'analysis_completed',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              shouldBid: data.shouldBid,
-              relevanceScore: data.relevanceScore,
-              reasoning: data.reasoning,
-              targetSpots: data.targetSpots,
-              budgetPerSpot: data.budgetPerSpot,
-              strategy: data.strategy,
-            }]);
-            break;
+      case 'analysis_completed':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'analysis_completed',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          shouldBid: data.shouldBid,
+          relevanceScore: data.relevanceScore,
+          reasoning: data.reasoning,
+          targetSpots: data.targetSpots,
+          budgetPerSpot: data.budgetPerSpot,
+          strategy: data.strategy,
+        }]);
+        break;
 
-          case 'agent_status':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'agent_status',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              status: data.status,
-            }]);
-            break;
+      case 'agent_status':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'agent_status',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          status: data.status,
+        }]);
+        break;
 
-          case 'thinking':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'thinking',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              thinking: data.thinking,
-              proposedAmount: data.proposedAmount,
-            }]);
-            break;
+      case 'thinking':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'thinking',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          thinking: data.thinking,
+          proposedAmount: data.proposedAmount,
+        }]);
+        break;
 
-          case 'bid_placed':
-            setMessages(prev => {
-              const bidExists = prev.some(msg =>
-                msg.type === 'bid' &&
-                msg.agentId === data.agentId &&
-                msg.transactionHash === data.transactionHash
-              );
+      case 'bid_placed':
+        setMessages(prev => {
+          const bidExists = prev.some(msg =>
+            msg.type === 'bid' &&
+            msg.agentId === data.agentId &&
+            msg.transactionHash === data.transactionHash
+          );
 
-              if (bidExists) return prev;
+          if (bidExists) return prev;
 
-              return [...prev, {
-                id: msgId,
-                type: 'bid',
-                agentId: data.agentId,
-                timestamp: data.timestamp,
-                amount: parseFloat(data.amount),
-                transactionHash: data.transactionHash,
-                isLoading: true,
-              }];
-            });
-            break;
+          return [...prev, {
+            id: msgId,
+            type: 'bid',
+            agentId: data.agentId,
+            timestamp: data.timestamp,
+            amount: parseFloat(data.amount),
+            transactionHash: data.transactionHash,
+            isLoading: true,
+          }];
+        });
+        break;
 
-          case 'reflection':
-            setMessages(prev => prev.map(msg => {
-              if (msg.type === 'bid' && msg.agentId === data.agentId && msg.isLoading) {
-                return {
-                  ...msg,
-                  reflection: data.reflection,
-                  isLoading: false,
-                };
-              }
-              return msg;
-            }));
-            break;
+      case 'reflection':
+        setMessages(prev => prev.map(msg => {
+          if (msg.type === 'bid' && msg.agentId === data.agentId && msg.isLoading) {
+            return {
+              ...msg,
+              reflection: data.reflection,
+              isLoading: false,
+            };
+          }
+          return msg;
+        }));
+        break;
 
-          case 'refund':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'refund',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              refundAmount: data.amount,
-              transactionHash: data.transactionHash,
-            }]);
-            break;
+      case 'refund':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'refund',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          refundAmount: data.amount,
+          transactionHash: data.transactionHash,
+        }]);
+        break;
 
-          case 'withdrawal':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'withdrawal',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              refundAmount: data.amount,
-              reasoning: data.reasoning,
-              transactionHash: data.transactionHash,
-            }]);
-            break;
+      case 'withdrawal':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'withdrawal',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          refundAmount: data.amount,
+          reasoning: data.reasoning,
+          transactionHash: data.transactionHash,
+        }]);
+        break;
 
-          case 'agent_skipped':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'agent_skipped',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              reasoning: data.reasoning,
-              adSpotId: data.adSpotId,
-            }]);
-            break;
+      case 'agent_skipped':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'agent_skipped',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          reasoning: data.reasoning,
+          adSpotId: data.adSpotId,
+        }]);
+        break;
 
-          case 'agent_error':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'agent_error',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              phase: data.phase,
-              error: data.error,
-            }]);
-            break;
+      case 'agent_error':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'agent_error',
+          agentId: data.agentId,
+          timestamp: data.timestamp,
+          phase: data.phase,
+          error: data.error,
+        }]);
+        break;
 
-          case 'auction_ended':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'auction_ended',
-              timestamp: data.timestamp,
-              winner: data.winner,
-              finalBid: data.finalBid,
-              endReason: data.reason,
-            }]);
-            break;
+      case 'auction_ended':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'auction_ended',
+          timestamp: data.timestamp,
+          winner: data.winner,
+          finalBid: data.finalBid,
+          endReason: data.reason,
+        }]);
+        break;
 
-          case 'image_generation_update':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'image_generation_update',
-              timestamp: data.timestamp || new Date().toISOString(),
-              agentId: data.agentId,
-              status: data.status,
-              message: data.message,
-              imageUrl: data.imageUrl,
-              taskId: data.taskId,
-            }]);
-            break;
+      case 'image_generation_update':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'image_generation_update',
+          timestamp: data.timestamp || new Date().toISOString(),
+          agentId: data.agentId,
+          status: data.status,
+          message: data.message,
+          imageUrl: data.imageUrl,
+          taskId: data.taskId,
+        }]);
+        break;
 
-          case 'ad_image_ready':
-            setMessages(prev => [...prev, {
-              id: msgId,
-              type: 'ad_image_ready',
-              timestamp: data.timestamp || new Date().toISOString(),
-              agentId: data.winner?.agentId,
-              imageUrl: data.imageUrl,
-            }]);
-            break;
-        }
+      case 'ad_image_ready':
+        setMessages(prev => [...prev, {
+          id: msgId,
+          type: 'ad_image_ready',
+          timestamp: data.timestamp || new Date().toISOString(),
+          agentId: data.winner?.agentId,
+          imageUrl: data.imageUrl,
+        }]);
+        break;
+    }
   };
 
   // Polling logic - replaces SSE
@@ -502,11 +502,10 @@ export default function AnalyticalAgentsPage() {
           type: msg.shouldBid ? 'success' : 'info',
           icon: msg.shouldBid ? '✓' : '⊘',
           message: msg.shouldBid ? 'DECISION: BID' : 'DECISION: SKIP',
-          details: `Relevance: ${msg.relevanceScore}/10\n${msg.reasoning}\n\nStrategy: ${msg.strategy}${
-            msg.targetSpots && msg.targetSpots.length > 0
+          details: `Relevance: ${msg.relevanceScore}/10\n${msg.reasoning}\n\nStrategy: ${msg.strategy}${msg.targetSpots && msg.targetSpots.length > 0
               ? `\n\nTarget Spots: ${msg.targetSpots.join(', ')}\nBudget: ${Object.entries(msg.budgetPerSpot || {}).map(([spot, amount]) => `${spot}: $${amount}`).join(', ')}`
               : ''
-          }`,
+            }`,
         });
         break;
 
@@ -645,9 +644,9 @@ export default function AnalyticalAgentsPage() {
           type: statusTypes[msg.status as keyof typeof statusTypes] || 'info',
           icon: statusIcons[msg.status as keyof typeof statusIcons] || '🎨',
           message: msg.status === 'started' ? 'GENERATING AD IMAGE' :
-                   msg.status === 'progress' ? 'IMAGE GENERATION IN PROGRESS' :
-                   msg.status === 'completed' ? 'AD IMAGE GENERATED' :
-                   'IMAGE GENERATION FAILED',
+            msg.status === 'progress' ? 'IMAGE GENERATION IN PROGRESS' :
+              msg.status === 'completed' ? 'AD IMAGE GENERATED' :
+                'IMAGE GENERATION FAILED',
           details: msg.message,
         });
         break;
@@ -680,7 +679,7 @@ export default function AnalyticalAgentsPage() {
 
   // Detect event gaps
   useEffect(() => {
-    const agentSequences: {[agentId: string]: number[]} = {};
+    const agentSequences: { [agentId: string]: number[] } = {};
 
     messages.forEach(msg => {
       if (msg.agentId && (msg as any).eventSequence) {
@@ -691,7 +690,7 @@ export default function AnalyticalAgentsPage() {
       }
     });
 
-    const gaps: {agentId: string, missing: number[]}[] = [];
+    const gaps: { agentId: string, missing: number[] }[] = [];
     Object.entries(agentSequences).forEach(([agentId, sequences]) => {
       if (sequences.length === 0) return;
 
