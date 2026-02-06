@@ -90,7 +90,7 @@ export class AnalyticalBiddingAgent extends IntelligentBiddingAgent {
   }
 
   constructor(config: {
-    privateKey: Hex;
+    privateKey: string;
     agentName: string;
     maxBid?: number | null; // Optional/null for analytical agents
     serverUrl: string;
@@ -132,7 +132,8 @@ export class AnalyticalBiddingAgent extends IntelligentBiddingAgent {
     try {
       // Use x402-wrapped Firecrawl endpoint
       // Note: Firecrawl v2 API doesn't support custom headers for target URL
-      const response = await this.axiosWithPayment.post(
+      const client = await this.axiosWithPayment;
+      const response = await client.post(
         process.env.FIRECRAWL_WRAPPED_ENDPOINT!,
         {
           url,
@@ -269,7 +270,8 @@ export class AnalyticalBiddingAgent extends IntelligentBiddingAgent {
 
     try {
       // Use axios with payment interceptor (Base Sepolia)
-      const response = await this.axiosWithPayment.get(
+      const client = await this.axiosWithPayment;
+      const response = await client.get(
         `${this.serverUrl}/api/site-analytics`
       );
 
@@ -351,9 +353,8 @@ export class AnalyticalBiddingAgent extends IntelligentBiddingAgent {
       timestamp: new Date().toISOString(),
     });
 
-    const analysisPrompt = `You are ${this.agentName}, a marketing AI for ${
-      this.brandIdentity?.brandName
-    }.
+    const analysisPrompt = `You are ${this.agentName}, a marketing AI for ${this.brandIdentity?.brandName
+      }.
 
 PRODUCT: ${this.brandIdentity?.productName}
 - Description: ${this.brandIdentity?.productDescription}
@@ -364,9 +365,8 @@ MISSION: Analyze this advertising opportunity and decide if/how to bid.
 
 SITE ANALYSIS:
 - Content Topics: ${this.siteAnalysis.topics.join(", ")}
-- Site Description: ${
-      this.siteAnalysis.metadata.description || "Technology news for developers"
-    }
+- Site Description: ${this.siteAnalysis.metadata.description || "Technology news for developers"
+      }
 
 SITE ANALYTICS:
 - Monthly Visits: ${this.analyticsData.site.monthlyVisits.toLocaleString()}
@@ -377,38 +377,35 @@ SITE ANALYTICS:
 
 AVAILABLE AD SPOTS:
 ${Object.entries(this.analyticsData.adSpots)
-  .map(
-    ([spotId, spot]) => `
+        .map(
+          ([spotId, spot]) => `
 - ${spot.name} (${spotId}):
   * Impressions: ${spot.impressions.toLocaleString()}/month
   * CTR: ${spot.clickThroughRate}
   * Est. Clicks: ${spot.estimatedMonthlyClicks.toLocaleString()}/month
   * Avg Bid: ${spot.averageBid}
-  * Cost per click: ${
-    this.analyticsData!.pricing[spotId.replace("-", "")]
-      ? this.analyticsData!.pricing[spotId.replace("-", "")]!.costPerClick
-      : "N/A"
-  }
-  * Suggested Bid: ${
-    this.analyticsData!.pricing[spotId.replace("-", "")]
-      ? this.analyticsData!.pricing[spotId.replace("-", "")]!
-          .suggestedOptimalBid
-      : "N/A"
-  }
+  * Cost per click: ${this.analyticsData!.pricing[spotId.replace("-", "")]
+              ? this.analyticsData!.pricing[spotId.replace("-", "")]!.costPerClick
+              : "N/A"
+            }
+  * Suggested Bid: ${this.analyticsData!.pricing[spotId.replace("-", "")]
+              ? this.analyticsData!.pricing[spotId.replace("-", "")]!
+                .suggestedOptimalBid
+              : "N/A"
+            }
 `
-  )
-  .join("\n")}
+        )
+        .join("\n")}
 
 YOUR WALLET BALANCE: $${balance.toFixed(2)} USDC
 
 IMPORTANT DECISION CRITERIA:
-1. **Relevance**: Does this site's audience match our target (${
-      this.brandIdentity?.targetAudience
-    })?
+1. **Relevance**: Does this site's audience match our target (${this.brandIdentity?.targetAudience
+      })?
 2. **ROI**: Given the traffic and CTR, is this worth the investment?
 3. **Budget**: How much should we allocate? (You have $${balance.toFixed(
-      2
-    )} available)
+        2
+      )} available)
 4. **Strategy**: Which spot(s) should we target? Prime, secondary, both, or neither?
 
 CRITICAL: You MUST respond with ONLY valid JSON. No explanations, no thoughts, no markdown - JUST THE JSON OBJECT.
@@ -485,10 +482,9 @@ Return ONLY the JSON object above. Do not include any other text.`;
       console.log(`   🎯 Should bid: ${decision.shouldBid ? "YES" : "NO"}`);
       console.log(`   ⭐ Relevance score: ${decision.relevanceScore}/10`);
       console.log(
-        `   💡 Reasoning: ${
-          decision.reasoning
-            ? decision.reasoning.substring(0, 200) + "..."
-            : "N/A"
+        `   💡 Reasoning: ${decision.reasoning
+          ? decision.reasoning.substring(0, 200) + "..."
+          : "N/A"
         }`
       );
 
@@ -550,7 +546,8 @@ Return ONLY the JSON object above. Do not include any other text.`;
         `🚫 [${this.agentName}] Notifying server about skipping "${adSpotId}"`
       );
 
-      const response = await this.axiosWithPayment.post(
+      const client = await this.axiosWithPayment;
+      const response = await client.post(
         `${this.serverUrl}/api/skip-spot/${adSpotId}`,
         {
           agentId: this.agentName,
@@ -614,8 +611,7 @@ Return ONLY the JSON object above. Do not include any other text.`;
       // Use tunnel URL if available (for Firecrawl to access localhost), otherwise use serverUrl
       const baseUrl = this.tunnelUrl || this.serverUrl;
       console.log(
-        `   🌐 Using ${
-          this.tunnelUrl ? "tunnel URL" : "server URL"
+        `   🌐 Using ${this.tunnelUrl ? "tunnel URL" : "server URL"
         }: ${baseUrl}`
       );
       this.siteAnalysis = await this.scrapeWebsite(
@@ -638,8 +634,7 @@ Return ONLY the JSON object above. Do not include any other text.`;
       // Notify server about ANY skipped spots
       if (skippedSpots.length > 0) {
         console.log(
-          `\n🚫 [${this.agentName}] Skipping ${
-            skippedSpots.length
+          `\n🚫 [${this.agentName}] Skipping ${skippedSpots.length
           } spot(s): ${skippedSpots.join(", ")}`
         );
         for (const skippedSpot of skippedSpots) {
