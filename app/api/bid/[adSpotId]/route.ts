@@ -106,16 +106,14 @@ export async function POST(
       const negotiationMessage = proposedBid
         ? isProposalAcceptable
           ? `Your proposal of $${proposedBid.toFixed(
-              2
-            )} is acceptable. Proceed with payment.`
+            2
+          )} is acceptable. Proceed with payment.`
           : `Your proposal of $${proposedBid.toFixed(
-              2
-            )} is too low. Current bid: $${
-              currentBid?.toFixed(2) || "0.00"
-            }. Minimum required: $${minimumRequiredNum.toFixed(2)}`
-        : `No proposal detected. Current bid: $${
-            currentBid?.toFixed(2) || "0.00"
-          }. Minimum required: $${minimumRequiredNum.toFixed(2)}`;
+            2
+          )} is too low. Current bid: $${currentBid?.toFixed(2) || "0.00"
+          }. Minimum required: $${minimumRequiredNum.toFixed(2)}`
+        : `No proposal detected. Current bid: $${currentBid?.toFixed(2) || "0.00"
+        }. Minimum required: $${minimumRequiredNum.toFixed(2)}`;
 
       // If proposal exists and is too low, reject it immediately
       // This prevents x402-axios from paying more than the agent intended
@@ -175,11 +173,11 @@ export async function POST(
           suggestion: minimumRequiredNum + 1.0,
           timeRemaining: bidRecord?.auctionEndTime
             ? Math.max(
-                0,
-                Math.floor(
-                  (bidRecord.auctionEndTime.getTime() - Date.now()) / 1000
-                )
+              0,
+              Math.floor(
+                (bidRecord.auctionEndTime.getTime() - Date.now()) / 1000
               )
+            )
             : null,
           bidHistory: bidRecord?.bidHistory.slice(-5) || [],
         },
@@ -206,7 +204,7 @@ export async function POST(
     const paymentRequirements = {
       scheme: "exact" as const,
       network:
-        network === "mainnet-beta" ? "solana" : ("solana-devnet" as const),
+        network === "mainnet-beta" ? "solana" : ("solana-devnet" as any),
       maxAmountRequired: (parseBidAmount(requiredPrice) * 1_000_000).toString(),
       asset: usdcMint,
       payTo: process.env.ADDRESS as string,
