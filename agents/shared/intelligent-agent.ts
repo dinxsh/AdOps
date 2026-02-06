@@ -89,6 +89,7 @@ export class IntelligentBiddingAgent {
   protected lastBidAmount: number = 0;
   protected isInAIReasoning: boolean = false;
   protected refundPending: boolean = false;
+  protected dryRun: boolean = false;
 
   constructor(config: {
     privateKey: string; // Base58 or hex encoded private key
@@ -96,12 +97,19 @@ export class IntelligentBiddingAgent {
     maxBid: number;
     serverUrl: string;
     geminiApiKey: string;
+    geminiApiKey: string;
     brandIdentity?: BrandIdentity;
+    dryRun?: boolean;
   }) {
     this.agentName = config.agentName;
     this.maxBid = config.maxBid;
     this.serverUrl = config.serverUrl;
     this.brandIdentity = config.brandIdentity;
+    this.dryRun = config.dryRun || false;
+
+    if (this.dryRun) {
+      console.log(`⚠️ [${this.agentName}] RUNNING IN DRY-RUN MODE: Payments will be simulated.`);
+    }
 
     // Parse private key (support both base58 and hex)
     let secretKey: Uint8Array;
@@ -705,8 +713,16 @@ export class IntelligentBiddingAgent {
         sessionId: z.string().describe("Active x402 session ID"),
         amount: z.number().describe("Amount to pay"),
         eventType: z.string().describe("Type of event being paid for (e.g., 'impression', 'api_call')"),
+        simulate: z.boolean().optional().describe("If true, simulates payment without actual cost (for dry runs)"),
       }),
-      execute: async ({ sessionId, amount, eventType }: { sessionId: string; amount: number; eventType: string }) => {
+      execute: async ({ sessionId, amount, eventType, simulate }: { sessionId: string; amount: number; eventType: string; simulate?: boolean }) => {
+        if (simulate || this.dryRun) {
+          console.log(`\n🧪 [${this.agentName}] SIMULATED x402 Payment: $${amount} for ${eventType}`);
+          console.log(`   Session: ${sessionId}`);
+          console.log(`   (No actual funds were transferred)`);
+          return JSON.stringify({ success: true, txHash: `0xSIMULATED_${Math.random().toString(16).substring(2)}`, status: "settled", simulated: true });
+        }
+
         console.log(`\n💸 [${this.agentName}] x402 Payment: $${amount} for ${eventType}`);
         console.log(`   Session: ${sessionId}`);
         return JSON.stringify({ success: true, txHash: `0x${Math.random().toString(16).substring(2)}`, status: "settled" });
@@ -833,7 +849,9 @@ Log your reasoning with log_action.
 Hard constraints:
 - Never push total expected spend above remaining_budget ($${context.remainingBudget}).
 - Never increase any bid above reasonable market rates.
+- Never increase any bid above reasonable market rates.
 - If data is too noisy or insufficient, make no-op adjustments and log that decision.
+${this.dryRun ? "- DRY RUN ACTIVE: Always set 'simulate: true' when calling pay_per_event. Explain in log_action that this is a simulation." : ""}
 `;
 
     try {
