@@ -180,6 +180,27 @@ export async function initializeWallet() {
 
   return {
     address: keypair.publicKey.toBase58(),
-    balance,
   };
+}
+
+// Request airdrop (faucet)
+export async function fundWalletFromFaucet(
+  network: "devnet" | "mainnet-beta" | string,
+  currency: "sol" | "usdc" | string
+): Promise<void> {
+  const conn = getConnection();
+  const keypair = getServerKeypair();
+
+  if (currency === "sol" || currency === "eth") { // Handle 'eth' for compatibility
+    console.log(`💧 Requesting SOL airdrop...`);
+    try {
+      const sig = await conn.requestAirdrop(keypair.publicKey, 1 * 1000000000); // 1 SOL
+      await conn.confirmTransaction(sig);
+      console.log(`✅ Airdrop successful!`);
+    } catch (e: any) {
+      console.error(`❌ Airdrop failed: ${e.message}`);
+    }
+  } else {
+    console.log(`⚠️ Faucet for ${currency} not supported via script. Please fund manually.`);
+  }
 }
