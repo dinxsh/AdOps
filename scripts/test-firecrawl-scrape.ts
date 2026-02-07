@@ -37,7 +37,7 @@ async function testFirecrawlScrape() {
     axios.create({
       headers: { 'X-Agent-ID': 'TestAgent' }
     }),
-    walletClient as any
+    walletClient as unknown as Parameters<typeof withPaymentInterceptor>[1]
   );
 
   try {
@@ -73,14 +73,16 @@ async function testFirecrawlScrape() {
     console.log('✅ Test PASSED - Firecrawl scraping works with public URLs!\n');
     return true;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const axiosError = error as { response?: { status: number; data: unknown } };
     console.error('❌ Test FAILED\n');
 
-    if (error.response) {
-      console.error('Status:', error.response.status);
-      console.error('Data:', JSON.stringify(error.response.data, null, 2));
+    if (axiosError.response) {
+      console.error('Status:', axiosError.response.status);
+      console.error('Data:', JSON.stringify(axiosError.response.data, null, 2));
     } else {
-      console.error('Error:', error.message);
+      console.error('Error:', errorMessage);
     }
 
     console.log('\n❌ This indicates an issue with the ez402 wrapper or Firecrawl API itself\n');

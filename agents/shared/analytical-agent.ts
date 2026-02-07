@@ -661,7 +661,7 @@ Return ONLY the JSON object above. Do not include any other text.`;
         const maxBudget = Math.max(
           ...Object.values(this.budgetDecision.budgetPerSpot)
         );
-        (this as any).maxBid = maxBudget;
+        this.maxBid = maxBudget;
 
         await this.startBidding(firstSpot);
       } else {
@@ -670,8 +670,9 @@ Return ONLY the JSON object above. Do not include any other text.`;
         );
         console.log(`   Reason: ${this.budgetDecision.reasoning}`);
       }
-    } catch (error: any) {
-      console.error(`\n❌ [${this.agentName}] Startup error:`, error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`\n❌ [${this.agentName}] Startup error:`, errorMessage);
       console.error(`   Agent will not participate in bidding.`);
     }
   }

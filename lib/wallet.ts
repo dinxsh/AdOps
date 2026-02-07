@@ -96,7 +96,7 @@ export async function getWalletBalance(): Promise<{
     );
     const accountInfo = await getAccount(conn, tokenAccount);
     usdcBalance = Number(accountInfo.amount);
-  } catch (error) {
+  } catch {
     // Token account doesn't exist, balance is 0
     usdcBalance = 0;
   }
@@ -176,7 +176,7 @@ export async function sendRefund(
 // Initialize wallet (for compatibility with existing code)
 export async function initializeWallet() {
   const keypair = getServerKeypair();
-  const balance = await getWalletBalance();
+  await getWalletBalance();
 
   return {
     address: keypair.publicKey.toBase58(),
@@ -197,8 +197,8 @@ export async function fundWalletFromFaucet(
       const sig = await conn.requestAirdrop(keypair.publicKey, 1 * 1000000000); // 1 SOL
       await conn.confirmTransaction(sig);
       console.log(`✅ Airdrop successful!`);
-    } catch (e: any) {
-      console.error(`❌ Airdrop failed: ${e.message}`);
+    } catch (e: unknown) {
+      console.error(`❌ Airdrop failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   } else {
     console.log(`⚠️ Faucet for ${currency} not supported via script. Please fund manually.`);

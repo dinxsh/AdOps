@@ -203,8 +203,7 @@ export async function POST(
 
     const paymentRequirements = {
       scheme: "exact" as const,
-      network:
-        network === "mainnet-beta" ? "solana" : ("solana-devnet" as any),
+      network: (network === "mainnet-beta" ? "solana" : "solana-devnet") as "solana" | "solana-devnet",
       maxAmountRequired: (parseBidAmount(requiredPrice) * 1_000_000).toString(),
       asset: usdcMint,
       payTo: process.env.ADDRESS as string,
@@ -219,7 +218,7 @@ export async function POST(
     const walletClient = await getServerWalletClient();
     // x402 should support Solana Keypair as Signer
     const verifyResult = await verify(
-      walletClient as any,
+      walletClient as unknown as Parameters<typeof verify>[0],
       payment,
       paymentRequirements
     );
@@ -248,7 +247,7 @@ export async function POST(
 
     // Create new settlement promise and store it
     const settlementPromise = settle(
-      walletClient as any,
+      walletClient as unknown as Parameters<typeof settle>[0],
       payment,
       paymentRequirements
     );
@@ -281,7 +280,9 @@ export async function POST(
       bidAmount = parseFloat(String(payment.payload.amount)) / 1_000_000;
     } else if (
       "authorization" in payment.payload &&
-      "value" in (payment.payload as any).authorization
+      typeof (payment.payload as Record<string, unknown>).authorization === "object" &&
+      (payment.payload as Record<string, unknown>).authorization !== null &&
+      "value" in ((payment.payload as Record<string, unknown>).authorization as Record<string, unknown>)
     ) {
       // EVM payload format (for compatibility)
       const exactPayload = payment.payload as ExactEvmPayload;

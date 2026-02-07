@@ -60,8 +60,7 @@ export async function GET(request: NextRequest) {
     const network = process.env.SOLANA_NETWORK || "devnet";
     const paymentRequirements = {
       scheme: "exact" as const,
-      network:
-        network === "mainnet-beta" ? "solana" : ("solana-devnet" as any),
+      network: (network === "mainnet-beta" ? "solana" : "solana-devnet") as "solana" | "solana-devnet",
       maxAmountRequired: (0.01 * 1_000_000).toString(),
       asset: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC SPL Token
       payTo: process.env.ADDRESS as string,
@@ -75,7 +74,7 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 [analytics] Verifying payment from ${agentId}...`);
     const walletClient = await getServerWalletClient();
     const verifyResult = await verify(
-      walletClient as any,
+      walletClient as unknown as Parameters<typeof verify>[0],
       payment,
       paymentRequirements
     );
@@ -104,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     // Create and store settlement promise
     const settlementPromise = settle(
-      walletClient as any,
+      walletClient as unknown as Parameters<typeof settle>[0],
       payment,
       paymentRequirements
     );

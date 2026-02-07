@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdSpotRecord, updateAdSpotRecord } from '@/lib/db';
+import { AdSpotRecord } from '@/types';
 
 export async function POST(request: NextRequest) {
   const { adSpotId, agentId, prompt } = await request.json();
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
     await updateAdSpotRecord(adSpotId, {
       'winnerAdImage.taskId': taskId,
       'winnerAdImage.prompt': prompt
-    } as Record<string, unknown>);
+    } as unknown as Partial<AdSpotRecord>);
 
     console.log(`✅ [generate-ad-image] Task created: ${taskId} for ${agentId}`);
 

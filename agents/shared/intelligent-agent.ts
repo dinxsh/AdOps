@@ -97,7 +97,6 @@ export class IntelligentBiddingAgent {
     maxBid: number;
     serverUrl: string;
     geminiApiKey: string;
-    geminiApiKey: string;
     brandIdentity?: BrandIdentity;
     dryRun?: boolean;
   }) {

@@ -46,7 +46,7 @@ async function generateLogo(config: LogoConfig): Promise<string> {
         'x-freepik-api-key': process.env.FREEPIK_API_KEY,
       },
     }),
-    wallet as any
+    wallet as unknown as Parameters<typeof withPaymentInterceptor>[1]
   );
 
   try {
@@ -92,8 +92,8 @@ async function generateLogo(config: LogoConfig): Promise<string> {
         // Check different possible response structures
         const status = statusResponse.data.status || statusResponse.data.data?.status;
         const imageData = statusResponse.data.data?.generated?.[0] ||
-                         statusResponse.data.generated?.[0] ||
-                         statusResponse.data.data?.[0];
+          statusResponse.data.generated?.[0] ||
+          statusResponse.data.data?.[0];
 
         if (status === 'SUCCESS' || status === 'success' || status === 'COMPLETED') {
           if (imageData?.url) {
@@ -106,8 +106,9 @@ async function generateLogo(config: LogoConfig): Promise<string> {
         } else {
           process.stdout.write('.');
         }
-      } catch (error: any) {
-        if (error.response?.status === 404) {
+      } catch (error: unknown) {
+        const axiosError = error as { response?: { status: number } };
+        if (axiosError.response?.status === 404) {
           // Task not found yet, keep waiting
           process.stdout.write('.');
         } else {
@@ -121,10 +122,12 @@ async function generateLogo(config: LogoConfig): Promise<string> {
     }
 
     return imageUrl;
-  } catch (error: any) {
-    console.error(`❌ Error generating ${config.brandName} logo:`, error.message);
-    if (error.response) {
-      console.error('Response:', error.response.data);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const axiosError = error as { response?: { data: unknown } };
+    console.error(`❌ Error generating ${config.brandName} logo:`, errorMessage);
+    if (axiosError.response) {
+      console.error('Response:', axiosError.response.data);
     }
     throw error;
   }

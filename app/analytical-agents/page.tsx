@@ -84,12 +84,14 @@ export default function AnalyticalAgentsPage() {
   const [seenEventIds] = useState(new Set<string>()); // Deduplication
   const [connectionStatus, setConnectionStatus] = useState<{ [key: string]: 'connecting' | 'connected' | 'disconnected' }>({});
   const [eventGaps, setEventGaps] = useState<{ agentId: string, missing: number[] }[]>([]);
-  const [replayStatus, setReplayStatus] = useState<{ [key: string]: { loading: boolean, count: number } }>({});
+  const [replayStatus] = useState<{ [key: string]: { loading: boolean, count: number } }>({});
   const [liveEventCount, setLiveEventCount] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
 
   // Helper function to process incoming events
-  const processEvent = (data: any, adSpotId: string, timestamp: string) => {
+  const processEvent = useMemo(() => (rawData: Record<string, unknown>, adSpotId: string, timestamp: string) => {
+    const data = rawData;
+
     // Log ALL incoming events with detailed info
     console.log(`\n📥 [${timestamp}] [BROWSER] Received event from "${adSpotId}"`);
     console.log(`   Type: ${data.type}`);
@@ -105,7 +107,7 @@ export default function AnalyticalAgentsPage() {
     seenEventIds.add(dedupeKey);
 
     // Track historical vs new events
-    const isHistorical = new Date(data.timestamp) < new Date(timestamp);
+    const isHistorical = new Date(data.timestamp as string) < new Date(timestamp);
     if (isHistorical) {
       console.log(`   📖 Historical event (from database)`);
     } else {
@@ -123,11 +125,11 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'agent_started',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          availableSpots: data.availableSpots,
-          brandName: data.brandName,
-          productName: data.productName,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          availableSpots: data.availableSpots as string[],
+          brandName: data.brandName as string,
+          productName: data.productName as string,
         }]);
         break;
 
@@ -135,11 +137,11 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'scraping_started',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          url: data.url,
-          paymentMethod: data.paymentMethod,
-          expectedCost: data.expectedCost,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          url: data.url as string,
+          paymentMethod: data.paymentMethod as string,
+          expectedCost: data.expectedCost as string,
         }]);
         break;
 
@@ -147,13 +149,13 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'scraping_completed',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          url: data.url,
-          contentLength: data.contentLength,
-          contentPreview: data.contentPreview,
-          siteTitle: data.siteTitle,
-          topics: data.topics,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          url: data.url as string,
+          contentLength: data.contentLength as number,
+          contentPreview: data.contentPreview as string,
+          siteTitle: data.siteTitle as string,
+          topics: data.topics as string[],
         }]);
         break;
 
@@ -161,10 +163,10 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'analytics_payment',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          amount: data.amount,
-          paymentMethod: data.paymentMethod,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          amount: data.amount as string,
+          paymentMethod: data.paymentMethod as string,
         }]);
         break;
 
@@ -172,11 +174,11 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'analytics_received',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          site: data.site,
-          audience: data.audience,
-          adSpots: data.adSpots,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          site: data.site as StreamingMessage['site'],
+          audience: data.audience as string,
+          adSpots: data.adSpots as StreamingMessage['adSpots'],
         }]);
         break;
 
@@ -184,9 +186,9 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'analysis_started',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          analysisContext: data.analysisContext,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          analysisContext: data.analysisContext as StreamingMessage['analysisContext'],
         }]);
         break;
 
@@ -194,14 +196,14 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'analysis_completed',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          shouldBid: data.shouldBid,
-          relevanceScore: data.relevanceScore,
-          reasoning: data.reasoning,
-          targetSpots: data.targetSpots,
-          budgetPerSpot: data.budgetPerSpot,
-          strategy: data.strategy,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          shouldBid: data.shouldBid as boolean,
+          relevanceScore: data.relevanceScore as number,
+          reasoning: data.reasoning as string,
+          targetSpots: data.targetSpots as string[],
+          budgetPerSpot: data.budgetPerSpot as Record<string, number>,
+          strategy: data.strategy as string,
         }]);
         break;
 
@@ -209,9 +211,9 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'agent_status',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          status: data.status,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          status: data.status as string,
         }]);
         break;
 
@@ -219,10 +221,10 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'thinking',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          thinking: data.thinking,
-          proposedAmount: data.proposedAmount,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          thinking: data.thinking as string,
+          proposedAmount: data.proposedAmount as number,
         }]);
         break;
 
@@ -239,10 +241,10 @@ export default function AnalyticalAgentsPage() {
           return [...prev, {
             id: msgId,
             type: 'bid',
-            agentId: data.agentId,
-            timestamp: data.timestamp,
-            amount: parseFloat(data.amount),
-            transactionHash: data.transactionHash,
+            agentId: data.agentId as string,
+            timestamp: data.timestamp as string,
+            amount: parseFloat(data.amount as string),
+            transactionHash: data.transactionHash as string,
             isLoading: true,
           }];
         });
@@ -253,7 +255,7 @@ export default function AnalyticalAgentsPage() {
           if (msg.type === 'bid' && msg.agentId === data.agentId && msg.isLoading) {
             return {
               ...msg,
-              reflection: data.reflection,
+              reflection: data.reflection as string,
               isLoading: false,
             };
           }
@@ -265,10 +267,10 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'refund',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          refundAmount: data.amount,
-          transactionHash: data.transactionHash,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          refundAmount: data.amount as number,
+          transactionHash: data.transactionHash as string,
         }]);
         break;
 
@@ -276,11 +278,11 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'withdrawal',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          refundAmount: data.amount,
-          reasoning: data.reasoning,
-          transactionHash: data.transactionHash,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          refundAmount: data.amount as number,
+          reasoning: data.reasoning as string,
+          transactionHash: data.transactionHash as string,
         }]);
         break;
 
@@ -288,10 +290,10 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'agent_skipped',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          reasoning: data.reasoning,
-          adSpotId: data.adSpotId,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          reasoning: data.reasoning as string,
+          adSpotId: data.adSpotId as string,
         }]);
         break;
 
@@ -299,10 +301,10 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'agent_error',
-          agentId: data.agentId,
-          timestamp: data.timestamp,
-          phase: data.phase,
-          error: data.error,
+          agentId: data.agentId as string,
+          timestamp: data.timestamp as string,
+          phase: data.phase as string,
+          error: data.error as string,
         }]);
         break;
 
@@ -310,10 +312,10 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'auction_ended',
-          timestamp: data.timestamp,
-          winner: data.winner,
-          finalBid: data.finalBid,
-          endReason: data.reason,
+          timestamp: data.timestamp as string,
+          winner: data.winner as StreamingMessage['winner'],
+          finalBid: data.finalBid as number,
+          endReason: data.reason as string,
         }]);
         break;
 
@@ -321,12 +323,12 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'image_generation_update',
-          timestamp: data.timestamp || new Date().toISOString(),
-          agentId: data.agentId,
-          status: data.status,
-          message: data.message,
-          imageUrl: data.imageUrl,
-          taskId: data.taskId,
+          timestamp: (data.timestamp as string) || new Date().toISOString(),
+          agentId: data.agentId as string,
+          status: data.status as string,
+          message: data.message as string,
+          imageUrl: data.imageUrl as string,
+          taskId: data.taskId as string,
         }]);
         break;
 
@@ -334,13 +336,13 @@ export default function AnalyticalAgentsPage() {
         setMessages(prev => [...prev, {
           id: msgId,
           type: 'ad_image_ready',
-          timestamp: data.timestamp || new Date().toISOString(),
-          agentId: data.winner?.agentId,
-          imageUrl: data.imageUrl,
+          timestamp: (data.timestamp as string) || new Date().toISOString(),
+          agentId: (data.winner as StreamingMessage['winner'])?.agentId,
+          imageUrl: data.imageUrl as string,
         }]);
         break;
     }
-  };
+  }, [seenEventIds]);
 
   // Polling logic - replaces SSE
   useEffect(() => {
@@ -379,7 +381,7 @@ export default function AnalyticalAgentsPage() {
         console.log(`   ✅ Received ${events.length} event(s)`);
 
         // Process each event
-        events.forEach((event: any) => {
+        events.forEach((event: Record<string, unknown>) => {
           processEvent(event, adSpotId, serverTimestamp);
         });
 
@@ -408,7 +410,7 @@ export default function AnalyticalAgentsPage() {
       isPolling = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [processEvent]);
 
   // Convert streaming messages to terminal logs
   const messageToTerminalLog = (msg: StreamingMessage) => {
@@ -503,8 +505,8 @@ export default function AnalyticalAgentsPage() {
           icon: msg.shouldBid ? '✓' : '⊘',
           message: msg.shouldBid ? 'DECISION: BID' : 'DECISION: SKIP',
           details: `Relevance: ${msg.relevanceScore}/10\n${msg.reasoning}\n\nStrategy: ${msg.strategy}${msg.targetSpots && msg.targetSpots.length > 0
-              ? `\n\nTarget Spots: ${msg.targetSpots.join(', ')}\nBudget: ${Object.entries(msg.budgetPerSpot || {}).map(([spot, amount]) => `${spot}: $${amount}`).join(', ')}`
-              : ''
+            ? `\n\nTarget Spots: ${msg.targetSpots.join(', ')}\nBudget: ${Object.entries(msg.budgetPerSpot || {}).map(([spot, amount]) => `${spot}: $${amount}`).join(', ')}`
+            : ''
             }`,
         });
         break;
@@ -682,11 +684,11 @@ export default function AnalyticalAgentsPage() {
     const agentSequences: { [agentId: string]: number[] } = {};
 
     messages.forEach(msg => {
-      if (msg.agentId && (msg as any).eventSequence) {
+      if (msg.agentId && (msg as unknown as Record<string, unknown>).eventSequence) {
         if (!agentSequences[msg.agentId]) {
           agentSequences[msg.agentId] = [];
         }
-        agentSequences[msg.agentId].push((msg as any).eventSequence);
+        agentSequences[msg.agentId].push((msg as unknown as Record<string, unknown>).eventSequence as number);
       }
     });
 

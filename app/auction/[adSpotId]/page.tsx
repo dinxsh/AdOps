@@ -75,7 +75,7 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
     let isPolling = true;
     const seenEventIds = new Set<string>();
 
-    const processEvent = (data: any) => {
+    const processEvent = (data: Record<string, unknown>) => {
       // Create unique ID for deduplication
       const eventId = `${data.type}-${data.agentId || 'system'}-${data.timestamp}-${data.transactionHash || Date.now()}`;
 
@@ -93,11 +93,11 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
           setMessages(prev => [...prev, {
             id: `${data.agentId}-thinking-${Date.now()}`,
             type: 'thinking',
-            agentId: data.agentId,
-            timestamp: data.timestamp,
-            thinking: data.thinking,
-            strategy: data.strategy,
-            proposedAmount: data.proposedAmount,
+            agentId: data.agentId as string,
+            timestamp: data.timestamp as string,
+            thinking: data.thinking as string,
+            strategy: data.strategy as string,
+            proposedAmount: data.proposedAmount as number,
           }]);
           break;
 
@@ -118,14 +118,14 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
             return [...prev, {
               id: `${data.agentId}-bid-${Date.now()}`,
               type: 'bid',
-              agentId: data.agentId,
-              timestamp: data.timestamp,
-              amount: data.amount,
-              transactionHash: data.transactionHash,
+              agentId: data.agentId as string,
+              timestamp: data.timestamp as string,
+              amount: data.amount as number,
+              transactionHash: data.transactionHash as string,
               isLoading: true, // Waiting for reflection
             }];
           });
-          setCurrentBid(data.amount);
+          setCurrentBid(data.amount as number);
           break;
 
         case 'reflection':
@@ -134,7 +134,7 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
             if (msg.type === 'bid' && msg.agentId === data.agentId && msg.isLoading) {
               return {
                 ...msg,
-                reflection: data.reflection,
+                reflection: data.reflection as string,
                 isLoading: false,
               };
             }
@@ -147,10 +147,10 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
           setMessages(prev => [...prev, {
             id: `${data.agentId}-refund-${Date.now()}`,
             type: 'refund',
-            agentId: data.agentId,
-            timestamp: data.timestamp,
-            refundAmount: data.amount,
-            transactionHash: data.transactionHash,
+            agentId: data.agentId as string,
+            timestamp: data.timestamp as string,
+            refundAmount: data.amount as number,
+            transactionHash: data.transactionHash as string,
           }]);
           break;
 
@@ -159,11 +159,11 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
           setMessages(prev => [...prev, {
             id: `${data.agentId}-withdrawal-${Date.now()}`,
             type: 'withdrawal',
-            agentId: data.agentId,
-            timestamp: data.timestamp,
-            refundAmount: data.amount,
-            reasoning: data.reasoning,
-            transactionHash: data.transactionHash,
+            agentId: data.agentId as string,
+            timestamp: data.timestamp as string,
+            refundAmount: data.amount as number,
+            reasoning: data.reasoning as string,
+            transactionHash: data.transactionHash as string,
           }]);
           break;
 
@@ -172,10 +172,10 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
           setMessages(prev => [...prev, {
             id: `auction-ended-${Date.now()}`,
             type: 'auction_ended',
-            timestamp: data.timestamp,
-            winner: data.winner,
-            finalBid: data.finalBid,
-            endReason: data.reason,
+            timestamp: data.timestamp as string,
+            winner: data.winner as StreamingMessage['winner'],
+            finalBid: data.finalBid as number,
+            endReason: data.reason as string,
           }]);
           break;
 
@@ -184,9 +184,9 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
           setMessages(prev => [...prev, {
             id: `ad-image-ready-${Date.now()}`,
             type: 'ad_image_ready',
-            timestamp: data.timestamp || new Date().toISOString(),
-            agentId: data.winner?.agentId,
-            imageUrl: data.imageUrl,
+            timestamp: (data.timestamp as string) || new Date().toISOString(),
+            agentId: (data.winner as StreamingMessage['winner'])?.agentId,
+            imageUrl: data.imageUrl as string,
           }]);
           break;
 
@@ -195,12 +195,12 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
           setMessages(prev => [...prev, {
             id: `image-gen-${Date.now()}`,
             type: 'image_generation_update',
-            timestamp: data.timestamp || new Date().toISOString(),
-            agentId: data.agentId,
-            status: data.status,
-            message: data.message,
-            imageUrl: data.imageUrl,
-            taskId: data.taskId,
+            timestamp: (data.timestamp as string) || new Date().toISOString(),
+            agentId: data.agentId as string,
+            status: data.status as string,
+            message: data.message as string,
+            imageUrl: data.imageUrl as string,
+            taskId: data.taskId as string,
           }]);
           break;
       }
@@ -219,7 +219,7 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
 
         if (result.success && result.events) {
           // Process each event
-          result.events.forEach((event: any) => {
+          result.events.forEach((event: Record<string, unknown>) => {
             processEvent(event);
           });
 
@@ -361,9 +361,9 @@ export default function AuctionPageStreaming({ params }: { params: Promise<{ adS
           type: statusTypes[msg.status as keyof typeof statusTypes] || 'info',
           icon: statusIcons[msg.status as keyof typeof statusIcons] || '🎨',
           message: msg.status === 'started' ? 'GENERATING AD IMAGE' :
-                   msg.status === 'progress' ? 'IMAGE GENERATION IN PROGRESS' :
-                   msg.status === 'completed' ? 'AD IMAGE GENERATED' :
-                   'IMAGE GENERATION FAILED',
+            msg.status === 'progress' ? 'IMAGE GENERATION IN PROGRESS' :
+              msg.status === 'completed' ? 'AD IMAGE GENERATED' :
+                'IMAGE GENERATION FAILED',
           details: msg.message,
         });
         break;

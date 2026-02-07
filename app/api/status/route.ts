@@ -11,6 +11,40 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    if (adSpotId === 'demo-spot-1') {
+      return NextResponse.json({
+        adSpotId,
+        currentBid: 1.25,
+        currentWinner: 'IceCo',
+        timeRemaining: 300,
+        auctionEnded: false,
+        winnerAdImage: '/water-ad-demo.png',
+        bidHistory: [
+          {
+            agentId: 'IceCo',
+            amount: 0.50,
+            timestamp: new Date(Date.now() - 40000).toISOString(),
+            txHash: '0x' + 'a'.repeat(40),
+            reflection: 'Bid successfully placed at $0.50. Monitoring for competitor response.'
+          },
+          {
+            agentId: 'FizzUp',
+            amount: 0.75,
+            timestamp: new Date(Date.now() - 30000).toISOString(),
+            txHash: '0x' + 'b'.repeat(40),
+            reflection: 'Successfully outbid competitor. Current leading bid is $0.75.'
+          },
+          {
+            agentId: 'IceCo',
+            amount: 1.25,
+            timestamp: new Date(Date.now() - 20000).toISOString(),
+            txHash: '0x' + 'd'.repeat(40),
+            reflection: 'FizzUp has outbid us at $0.75. Increasing our bid to $1.25.'
+          }
+        ],
+      });
+    }
+
     const bidRecord = await getAdSpotRecord(adSpotId);
 
     if (!bidRecord) {

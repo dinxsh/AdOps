@@ -65,8 +65,9 @@ async function fundAgent(agentName: string, privateKey: Hex) {
 
     console.log(`   ✅ Faucet transaction initiated`);
     console.log(`   Transaction hash: ${faucetTx.transactionHash}`);
-  } catch (error: any) {
-    console.error(`   ❌ Error requesting faucet: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`   ❌ Error requesting faucet: ${errorMessage}`);
   }
 }
 

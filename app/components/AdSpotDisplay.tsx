@@ -48,12 +48,12 @@ export default function AdSpotDisplay({ adSpotId }: AdSpotDisplayProps) {
 
         if (result.success && result.events) {
           // Look for ad_image_ready events
-          result.events.forEach((event: any) => {
+          result.events.forEach((event: Record<string, unknown>) => {
             if (event.type === 'ad_image_ready') {
               setAdData({
-                imageUrl: event.imageUrl,
-                winner: event.winner?.agentId || event.agentId,
-                prompt: event.prompt
+                imageUrl: event.imageUrl as string,
+                winner: (event.winner as { agentId: string })?.agentId || (event.agentId as string),
+                prompt: event.prompt as string
               });
             }
           });
