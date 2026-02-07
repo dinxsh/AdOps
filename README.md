@@ -4,7 +4,7 @@
 
 Intelligent AI agents that autonomously research websites, analyze traffic data, compete for advertising space, and generate creative content - all coordinated through economic signals powered by x402 micropayments.
 
----
+[![Watch the video](https://media.discordapp.net/attachments/1357095797082161323/1469612990612377797/image.png?ex=69884b41&is=6986f9c1&hm=f6d125da9c1b1384d3ecf523b59f854b63f9d6684c2373d799ebeb4f829b6aff&=&format=webp&quality=lossless)](https://www.youtube.com/watch?v=YgeHqa4Tgbw)
 
 ## What This Is
 
